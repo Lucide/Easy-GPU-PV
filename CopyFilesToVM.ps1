@@ -103,8 +103,9 @@ Function Check-Params {
 
 $ExitReason = @()
 
-$ISODriveLetter = Mount-ISOReliable -SourcePath $params.SourcePath
-
+if ([ENVIRONMENT]::Is64BitProcess -eq $false) {
+    $ExitReason += "You are not using the correct version of Powershell, do not use Powershell(x86)."
+    }
 if ((Is-Administrator) -eq $false) {
     $ExitReason += "Script not running as Administrator, please run script as Administrator."
     }
@@ -114,8 +115,12 @@ if (!(Test-Path $params.VHDPath)) {
 if (!(test-path $params.SourcePath)) {
     $ExitReason += "ISO Path Invalid. Please enter a valid ISO Path in the SourcePath section of Params."
     }
-if (!(Test-Path $("$ISODriveLetter"+":\Sources\install.wim"))) {
-    $ExitReason += "This ISO is invalid, please check readme for ISO downloading instructions."
+else {
+    $ISODriveLetter = Mount-ISOReliable -SourcePath $params.SourcePath
+    if (!(Test-Path $("$ISODriveLetter"+":\Sources\install.wim"))) {
+        $ExitReason += "This ISO is invalid, please check readme for ISO downloading instructions."
+        }
+    Dismount-ISO -SourcePath $params.SourcePath 
     }
 if ($params.Username -eq $params.VMName ) {
     $ExitReason += "Username cannot be the same as VMName."
@@ -129,7 +134,6 @@ if (($params.VMName -notmatch "^[a-zA-Z0-9]+$") -or ($params.VMName.Length -gt 1
 if (([Environment]::OSVersion.Version.Build -lt 22000) -and ($params.GPUName -ne "AUTO")) {
     $ExitReason += "GPUName must be set to AUTO on Windows 10."
     }
-    Dismount-ISO -SourcePath $params.SourcePath 
 If ($ExitReason.Count -gt 0) {
     Write-Host "Script failed params check due to the following reasons:" -ForegroundColor DarkYellow
     ForEach ($IndividualReason in $ExitReason) {
@@ -151,7 +155,7 @@ param(
 
     foreach ($line in $content) {
         if ($line -like "0Parameters="){
-            $line = "0Parameters=-team_id=$Team_ID -team_key=$Key"
+            $line = "0Parameters=$Team_ID $Key"
             $new += $line
             }
         Else {
