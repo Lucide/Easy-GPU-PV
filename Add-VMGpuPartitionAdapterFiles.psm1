@@ -26,8 +26,8 @@
     $Drivers = Get-WmiObject Win32_PNPSignedDriver | Where-Object { $_.DeviceName -eq "$GPUName" }
 
     New-Item -ItemType Directory -Path "$DriveLetter\windows\system32\HostDriverStore" -Force | Out-Null
-    # clear HostDriverStore contents
-    Remove-Item "$DriveLetter\windows\system32\HostDriverStore\*" -Recurse
+    # remove HostDriverStore\FileRepository directory
+    Remove-Item "$DriveLetter\windows\system32\HostDriverStore\FileRepository" -Recurse -ea SilentlyContinue
 
     #copy directory associated with sys file 
     $servicePath = (Get-WmiObject Win32_SystemDriver | Where-Object { $_.Name -eq "$GPUServiceName" }).Pathname
